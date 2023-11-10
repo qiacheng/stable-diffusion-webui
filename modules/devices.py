@@ -1,9 +1,16 @@
 import sys
 import contextlib
 from functools import lru_cache
+import os
 
 import torch
 from modules import errors, shared
+
+if os.environ.get('USE_IPEX') is not None and os.environ.get('USE_IPEX') == "1":
+    from modules.ipex import hijacks
+    hijacks.ipex_hijacks()
+
+
 
 if sys.platform == "darwin":
     from modules import mac_specific
@@ -22,11 +29,17 @@ def get_cuda_device_string():
 
     return "cuda"
 
+def get_xpu_device_string():
+    if shared.cmd_opts.device_id is not None:
+        return f"xpu:{shared.cmd_opts.device_id}"
+    return "xpu"
 
 def get_optimal_device_name():
     if torch.cuda.is_available():
         return get_cuda_device_string()
-
+    if os.environ.get('USE_IPEX') is not None and os.environ.get('USE_IPEX') == "1":
+        if torch.xpu.is_available():
+            return get_xpu_device_string()
     if has_mps():
         return "mps"
 
@@ -53,6 +66,10 @@ def torch_gc():
 
     if has_mps():
         mac_specific.torch_mps_gc()
+    if os.environ.get('USE_IPEX') is not None and os.environ.get('USE_IPEX') == "1":
+        if torch.xpu.is_available():
+            with torch.xpu.device(get_xpu_device_string()):
+                torch.xpu.empty_cache()
 
 
 def enable_tf32():

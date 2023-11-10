@@ -5,6 +5,7 @@ accelerate
 basicsr
 blendmodes
 clean-fid
+diffusers
 einops
 fastapi>=0.90.1
 gfpgan
