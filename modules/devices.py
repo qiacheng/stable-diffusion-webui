@@ -7,8 +7,12 @@ import torch
 from modules import errors, shared
 
 if os.environ.get('USE_IPEX') is not None and os.environ.get('USE_IPEX') == "1":
-    from modules.ipex import hijacks
+    from modules.ipex import hijacks, diffusers, attention
+    attention.attention_init()
     hijacks.ipex_hijacks()
+    diffusers.ipex_diffusers()
+    
+
 
 
 
